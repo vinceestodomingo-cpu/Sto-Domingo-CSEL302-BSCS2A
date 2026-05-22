@@ -1,0 +1,128 @@
+Dim ws As Worksheet
+
+Private Sub UserForm_Initialize()
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' Change "Sheet1" to your actual tab name
+    
+    
+    With ComboBox1
+        .AddItem "BSIT"
+        .AddItem "BSCS"
+        .AddItem "BSIS"
+    End With
+    
+    With ComboBox2
+        .AddItem "1st Year"
+        .AddItem "2nd Year"
+        .AddItem "3rd Year"
+        .AddItem "4th Year"
+    End With
+End Sub
+
+' --- ADD RECORD ---
+Private Sub CommandButton1_Click()
+    Dim nextRow As Long
+    If TextBox1.Value = "" Then MsgBox "Please enter Student ID": Exit Sub
+    
+    nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+    Call SaveToSheet(nextRow)
+    MsgBox "Record added!", vbInformation
+    CommandButton5_Click ' Clear form
+End Sub
+
+' --- UPDATE ---
+Private Sub CommandButton2_Click()
+    Dim r As Range
+    Set r = ws.Columns(1).Find(TextBox1.Value, LookIn:=xlValues, LookAt:=xlWhole)
+    
+    If Not r Is Nothing Then
+        Call SaveToSheet(r.Row)
+        MsgBox "Record updated!", vbInformation
+    Else
+        MsgBox "ID not found. Use Search first.", vbCritical
+    End If
+End Sub
+
+' --- DELETE ---
+Private Sub CommandButton3_Click()
+    Dim r As Range
+    Set r = ws.Columns(1).Find(TextBox1.Value, LookIn:=xlValues, LookAt:=xlWhole)
+    
+    If Not r Is Nothing Then
+        If MsgBox("Delete this record?", vbYesNo + vbQuestion) = vbYes Then
+            ws.Rows(r.Row).Delete
+            CommandButton5_Click
+            MsgBox "Deleted."
+        End If
+    Else
+        MsgBox "ID not found.", vbCritical
+    End If
+End Sub
+
+' --- SEARCH ---
+Private Sub CommandButton4_Click()
+    Dim foundRow As Range
+    
+        Set ws = ThisWorkbook.Sheets("Sheet1")
+    
+        If TextBox1.Value = "" Then
+        MsgBox "Please enter a Student ID to search.", vbExclamation
+        Exit Sub
+    End If
+
+  
+    Set foundRow = ws.Columns(1).Find(What:=TextBox1.Value, LookIn:=xlValues, LookAt:=xlWhole)
+
+        If Not foundRow Is Nothing Then
+        TextBox2.Value = ws.Cells(foundRow.Row, 2).Value ' Last Name
+        TextBox3.Value = ws.Cells(foundRow.Row, 3).Value ' First Name
+        TextBox4.Value = ws.Cells(foundRow.Row, 4).Value ' Middle Name
+        
+        If ws.Cells(foundRow.Row, 5).Value = "Male" Then
+            OptionButton1.Value = True
+        ElseIf ws.Cells(foundRow.Row, 5).Value = "Female" Then
+            OptionButton2.Value = True
+        End If
+        
+        CheckBox1.Value = InStr(1, ws.Cells(foundRow.Row, 6).Value, "Programming") > 0
+        CheckBox2.Value = InStr(1, ws.Cells(foundRow.Row, 6).Value, "Networking") > 0
+        CheckBox3.Value = InStr(1, ws.Cells(foundRow.Row, 6).Value, "Database") > 0
+        
+        ComboBox1.Value = ws.Cells(foundRow.Row, 7).Value
+        ComboBox2.Value = ws.Cells(foundRow.Row, 8).Value
+        
+        MsgBox "Record Found!", vbInformation
+    Else
+        
+        MsgBox "Student ID not found.", vbCritical
+    End If
+End Sub
+' --- CLEAR ---
+Private Sub CommandButton5_Click()
+    Dim ctrl As Control
+    For Each ctrl In Me.Controls
+        If TypeName(ctrl) = "TextBox" Or TypeName(ctrl) = "ComboBox" Then
+            ctrl.Value = ""
+        ElseIf TypeName(ctrl) = "OptionButton" Or TypeName(ctrl) = "CheckBox" Then
+            ctrl.Value = False
+        End If
+    Next ctrl
+End Sub
+
+' Helper Sub to map data to the sheet columns
+Sub SaveToSheet(RowIdx As Long)
+    ws.Cells(RowIdx, 1).Value = TextBox1.Value
+    ws.Cells(RowIdx, 2).Value = TextBox2.Value
+    ws.Cells(RowIdx, 3).Value = TextBox3.Value
+    ws.Cells(RowIdx, 4).Value = TextBox4.Value
+    
+    If OptionButton1.Value Then ws.Cells(RowIdx, 5).Value = "Male" Else ws.Cells(RowIdx, 5).Value = "Female"
+    
+    Dim skills As String
+    If CheckBox1.Value Then skills = skills & "Programming "
+    If CheckBox2.Value Then skills = skills & "Networking "
+    If CheckBox3.Value Then skills = skills & "Database "
+    ws.Cells(RowIdx, 6).Value = Trim(skills)
+    
+    ws.Cells(RowIdx, 7).Value = ComboBox1.Value
+    ws.Cells(RowIdx, 8).Value = ComboBox2.Value
+End Sub
